@@ -547,7 +547,7 @@ class PiholeDashboard {
         this.saveUserApps();
         this.refreshUserApps();
         
-        document.getElementById('importStatus').innerHTML = 
+        document.getElementById('importStatus').innerHTML =
             `<div class="alert alert-success">
                 <i class="bi bi-check-circle me-2"></i>
                 Successfully imported ${domains.length} domains for ${app}
@@ -720,8 +720,8 @@ class PiholeDashboard {
             
         } catch (error) {
             console.error(`Error fetching Netify info for ${domain}:`, error);
-            const fallback = { 
-                app: 'Unknown', 
+            const fallback = {
+                app: 'Unknown',
                 desc: 'No description available.',
                 accessCount: 1,
                 lastAccessed: Date.now(),
@@ -763,10 +763,10 @@ class PiholeDashboard {
         const domains = Object.keys(domainStats);
         const results = [];
         
-        const cachedDomains = domains.filter(domain => 
+        const cachedDomains = domains.filter(domain =>
             this.netifyCache.has(domain) || this.getUserAppForDomain(domain)
         );
-        const uncachedDomains = domains.filter(domain => 
+        const uncachedDomains = domains.filter(domain =>
             !this.netifyCache.has(domain) && !this.getUserAppForDomain(domain)
         );
         
@@ -1031,8 +1031,8 @@ class PiholeDashboard {
             options: {
                 responsive: true,
                 plugins: {
-                    title: { 
-                        display: true, 
+                    title: {
+                        display: true,
                         text: 'App/Service Distribution',
                         font: { size: 16, weight: 'bold' }
                     },
@@ -1063,8 +1063,8 @@ class PiholeDashboard {
             options: {
                 responsive: true,
                 plugins: {
-                    title: { 
-                        display: true, 
+                    title: {
+                        display: true,
                         text: 'Total Allowed vs Blocked',
                         font: { size: 16, weight: 'bold' }
                     },
