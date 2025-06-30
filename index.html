@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Pi-hole User Query Dashboard - Client Side</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <span class="navbar-brand">
+                <i class="bi bi-shield-check me-2"></i>
+                Pi-hole Dashboard (Client-Side)
+            </span>
+            <button class="theme-toggle" id="darkModeToggle">
+                <i class="bi bi-moon-fill me-2"></i>
+                <span id="themeText">Dark Mode</span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Pi-hole Configuration -->
+        <div class="dashboard-card">
+            <div class="section-title">
+                <i class="bi bi-gear me-2"></i>
+                Pi-hole Configuration
+            </div>
+            <div class="row g-3">
+                <div class="col-12 col-md-8">
+                    <label for="pihole_url" class="form-label">
+                        <i class="bi bi-server me-1"></i>
+                        Pi-hole API URL (with auth token)
+                    </label>
+                    <input type="text" class="form-control" id="pihole_url" 
+                           placeholder="http://192.168.1.1/admin/api.php?getAllQueries&auth=YOUR_API_KEY"
+                           value="">
+                    <small class="text-muted">Note: Pi-hole must have CORS enabled or use CORS proxy below</small>
+                </div>
+                <div class="col-12 col-md-4 d-flex align-items-end">
+                    <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="useCorsProxy">
+                        <label class="form-check-label" for="useCorsProxy">
+                            Use CORS Proxy
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Query Configuration -->
+        <div class="dashboard-card">
+            <div class="section-title">
+                <i class="bi bi-search me-2"></i>
+                Query Configuration
+            </div>
+            <form id="queryForm" class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label for="user_ip" class="form-label">
+                        <i class="bi bi-router me-1"></i>
+                        User IP Address
+                    </label>
+                    <input type="text" class="form-control" id="user_ip" placeholder="e.g. 192.168.1.100" required>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label for="timerange" class="form-label">
+                        <i class="bi bi-clock me-1"></i>
+                        Time Range
+                    </label>
+                    <select id="timerange" class="form-select">
+                        <option value="5m">Last 5 minutes</option>
+                        <option value="1h">Last 1 hour</option>
+                        <option value="24h" selected>Last 24 hours</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-play-fill me-2"></i>
+                        Run Query
+                    </button>
+                </div>
+                <div class="col-auto">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="showLive">
+                        <label class="form-check-label" for="showLive">
+                            <i class="bi bi-broadcast me-1"></i>
+                            Live Updates
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Advanced Filters Section -->
+        <div class="filter-section">
+            <div class="section-title">
+                <i class="bi bi-funnel me-2"></i>
+                Advanced Filters
+            </div>
+            <div class="row filter-row align-items-end">
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Search Apps/Services</label>
+                    <input type="text" class="form-control" placeholder="Filter by name..." id="appFilter">
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label">Status</label>
+                    <select id="statusDropdown" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="Allowed">Allowed</option>
+                        <option value="Blocked">Blocked</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label class="form-label">Include Only</label>
+                    <div class="multi-select-dropdown">
+                        <div class="multi-select-trigger" id="includeTrigger">
+                            <span id="includeText">All apps included</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                        <div class="multi-select-menu" id="includeMenu">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">Exclude Apps</label>
+                    <div class="multi-select-dropdown">
+                        <div class="multi-select-trigger" id="excludeTrigger">
+                            <span id="excludeText">No apps excluded</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                        <div class="multi-select-menu" id="excludeMenu">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="appsOnlyToggle">
+                        <label class="form-check-label" for="appsOnlyToggle">
+                            Apps Only
+                        </label>
+                    </div>
+                    <button class="btn btn-outline-primary btn-sm mt-2 w-100" type="button" data-bs-toggle="modal" data-bs-target="#manageAppsModal">
+                        <i class="bi bi-gear me-1"></i>
+                        Manage Apps
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Apply Filters Section -->
+            <div class="apply-filters-container">
+                <button class="btn btn-apply" id="applyFiltersBtn">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Apply Filters
+                </button>
+                <button class="btn btn-clear" id="clearFiltersBtn">
+                    <i class="bi bi-x-circle me-2"></i>
+                    Clear All
+                </button>
+                <div class="mt-2">
+                    <small class="text-muted">Select your filters above and click "Apply Filters" to update results</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay">
+            <div class="spinner-border text-light" style="width: 3rem; height: 3rem;"></div>
+            <div class="loading-text">Processing... <span id="loadingStatus">Fetching Pi-hole data</span></div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage"></div>
+
+        <!-- Charts -->
+        <div id="charts" class="charts-container" style="display:none;">
+            <div class="row">
+                <div class="col-12 col-lg-6 mb-4">
+                    <canvas id="appsChart" height="120"></canvas>
+                </div>
+                <div class="col-12 col-lg-6 mb-4">
+                    <canvas id="statusChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="dashboard-card">
+            <div class="table-responsive">
+                <table id="resultsTable" class="table" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th><i class="bi bi-globe me-2"></i>Domain / App</th>
+                            <th><i class="bi bi-hash me-2"></i>Total</th>
+                            <th><i class="bi bi-x-circle me-2"></i>Blocked</th>
+                            <th><i class="bi bi-check-circle me-2"></i>Allowed</th>
+                            <th><i class="bi bi-app me-2"></i>App/Service</th>
+                            <th><i class="bi bi-info-circle me-2"></i>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Apps Modal -->
+    <div class="modal fade" id="manageAppsModal" tabindex="-1" aria-labelledby="manageAppsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="manageAppsLabel">
+                        <i class="bi bi-gear me-2"></i>
+                        Manage Custom Apps/Services
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="section-title">Add New App/Service</div>
+                    <form id="addAppForm" class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">App Name</label>
+                            <input type="text" class="form-control" placeholder="e.g. Netflix" id="newAppName" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" placeholder="Streaming service" id="newAppDesc">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Domains (comma-separated)</label>
+                            <input type="text" class="form-control" placeholder="netflix.com, nflxso.net" id="newAppDomains">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                Add App
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr>
+
+                    <div class="section-title">Bulk Import from Text</div>
+                    <form id="bulkImportForm" class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label">App Name</label>
+                            <input type="text" class="form-control" placeholder="e.g. Social Media" id="importAppName" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" placeholder="Social media platforms" id="importAppDesc">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload me-2"></i>
+                                Import Domains
+                            </button>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Domain List (one per line)</label>
+                            <textarea class="form-control" id="importDomainList" rows="5" 
+                                      placeholder="facebook.com&#10;instagram.com&#10;whatsapp.com&#10;messenger.com"></textarea>
+                        </div>
+                    </form>
+                    <div id="importStatus" class="mt-3"></div>
+
+                    <hr>
+
+                    <div class="section-title">Current Custom Apps/Services</div>
+                    <div id="userAppsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
